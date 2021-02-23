@@ -1,0 +1,96 @@
+﻿@page "/user/login"
+@inject HttpClient  http
+@inject NavigationManager navigation
+@inject IJSRuntime JSRuntime
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger" role="alert">
+        @error
+    </div>
+}
+
+<EditForm Model="@user" OnValidSubmit="@Submit">
+    <DataAnnotationsValidator />
+    <div class="card" style="width:400px; display:block;margin:auto;">
+        <div class="card-header text-center">
+            Entrar
+        </div>
+        <div class="card-body">
+
+            <div class="form-group">
+                <label form="email">Email: </label>
+                <div>
+                    <InputText @bind-Value="@user.Email" class="form-control" />
+                    <ValidationMessage For="@(()=> user.Email)" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label form="password">Senha: </label>
+                <div>
+                    <InputText type="password" @bind-Value="@user.Password" class="form-control" />
+                    <ValidationMessage For="@(()=> user.Password)" />
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card-footer">
+            <button class="btn btn-success" type="submit">Entrar</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    string error;
+    User user = new User
+    {
+        Name = "login",
+        Surname = "login"
+    };
+
+    private async void CreateCookie(string name, string value, int days)
+    {
+        var test = await JSRuntime.InvokeAsync<string>("methods.CreateCookie", name, value, days);
+    }
+
+    async Task Submit()
+    {
+        try
+        {
+            error = "";
+            var loginAsJson = JsonSerializer.Serialize(user);
+
+            var httpResponse = await http.PostAsync("api/user/login",
+                     new StringContent(loginAsJson, Encoding.UTF8, "application/json"));
+
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                var responseAsString = await httpResponse.Content.ReadAsStringAsync();
+
+                var loginResult = JsonSerializer.Deserialize<User>(responseAsString,
+                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+
+                //CreateCookie("email", user.Email, 1);
+                await localStorage.SetItemAsync<User>("user", loginResult);
+
+                navigation.NavigateTo("/");
+            }
+            else
+            {
+                //loginFalhou = true;
+                error = $"Não foi possível realizar o Login do usuário.(Erro: {httpResponse.StatusCode})";
+            }
+        }
+        catch (Exception)
+        {
+            //loginFalhou = true;
+            error = "Não foi possível realizar o Login do Usuário...";
+        }
+    }
+
+
+}

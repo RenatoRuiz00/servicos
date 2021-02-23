@@ -1,0 +1,94 @@
+﻿@page "/user/register/contractor"
+
+<EditForm Model="@User" OnValidSubmit="@OnValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="card" style="width:600px;">
+        <div class="card-header">
+            <h4>Cadastre-se</h4>
+        </div>
+        <div class="card-body">
+            <div class="form-group">
+                <img src="@caminhoImg"/>
+                <InputFile OnChange="@OnInputFileChange"/>
+            </div>
+
+            <div class="form-group">
+                <label form="nome">Nome: </label>
+                <div>
+                    <InputText @bind-Value="@User.Name" class="form-control" />
+                    <ValidationMessage For="@(()=> User.Name)" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label form="usuario">Usuario: </label>
+                <div>
+                    <InputText @bind-Value="@User.Surname" class="form-control" />
+                    <ValidationMessage For="@(()=> User.Surname)" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label form="email">Email: </label>
+                <div>
+                    <InputText @bind-Value="@User.Email" class="form-control" />
+                    <ValidationMessage For="@(()=> User.Email)" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label form="password">Senha: </label>
+                <div>
+                    <InputText @bind-Value="@User.Password" class="form-control" />
+                    <ValidationMessage For="@(()=> User.Password)" />
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="card-footer">
+            <button class="btn btn-success float-right" type="submit">Salvar</button>
+            <button class="btn btn-danger float-right" style="margin-right:10px;" type="button">Voltar</button>
+        </div>
+    </div>
+</EditForm>
+
+@if (teste)
+{
+    <div>
+        Deu certo Nome:@User.Name <br /> @caminhoImg
+    </div>
+}
+
+@code {
+    private User User = new User();
+    bool teste = false;
+    private IList<string> imageDataUrls = new List<string>();
+    string caminhoImg = "";
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var maxAllowedFiles = 1;
+        var format = "image/png";
+
+        foreach (var imageFile in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            var resizedImageFile = await imageFile.RequestImageFileAsync(format,
+                100, 100);
+            var buffer = new byte[resizedImageFile.Size];
+            await resizedImageFile.OpenReadStream().ReadAsync(buffer);
+            var imageDataUrl =
+                $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+            imageDataUrls.Add(imageDataUrl);
+            caminhoImg = imageDataUrl;
+        }
+    }
+
+    void OnValidSubmit()
+    {
+        teste = true;
+    }
+
+
+}
